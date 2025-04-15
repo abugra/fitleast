@@ -8,14 +8,28 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var workoutManager = WorkoutManager()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            HomeView()
+                .tabItem {
+                    Label("Workouts", systemImage: "dumbbell.fill")
+                }
+            
+            Text("Stats Coming Soon")
+                .tabItem {
+                    Label("Stats", systemImage: "chart.bar.fill")
+                }
+            
+            Text("Settings Coming Soon")
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape.fill")
+                }
         }
-        .padding()
+        .tint(.white)
+        .environmentObject(workoutManager)
+        .preferredColorScheme(.dark)
     }
 }
 
