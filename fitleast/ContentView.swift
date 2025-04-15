@@ -17,6 +17,11 @@ struct ContentView: View {
                     Label("Workouts", systemImage: "dumbbell.fill")
                 }
             
+            WorkoutHistoryView()
+                .tabItem {
+                    Label("History", systemImage: "clock.arrow.circlepath")
+                }
+            
             Text("Stats Coming Soon")
                 .tabItem {
                     Label("Stats", systemImage: "chart.bar.fill")

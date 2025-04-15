@@ -1,27 +1,72 @@
 import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
 struct WorkoutDetailView: View {
     @EnvironmentObject var workoutManager: WorkoutManager
     @State private var showingTimer = false
+    @State private var showConfetti = false
+    @State private var showStreakMessage = false
     var workout: Workout
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                headerView
-                
-                exercisesList
-                
-                TimerView()
-                    .padding(.top, 20)
-                
-                resetButton
+        ZStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    headerView
+                    
+                    exercisesList
+                    
+                    TimerView()
+                        .padding(.top, 20)
+                    
+                    resetButton
+                }
+                .padding()
             }
-            .padding()
+            .navigationTitle(workout.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .background(Color.black.edgesIgnoringSafeArea(.all))
+            
+            // Confetti overlay
+            ConfettiView(isShowing: $showConfetti)
+                .allowsHitTesting(false)
+            
+            // Streak message overlay
+            if showStreakMessage {
+                VStack {
+                    Text("Workout Completed!")
+                        .font(.system(.title, design: .rounded).weight(.bold))
+                        .foregroundColor(.white)
+                    
+                    Text("+1 Streak")
+                        .font(.system(.title2, design: .rounded).weight(.bold))
+                        .foregroundColor(.green)
+                        .padding(.top, 5)
+                    
+                    Button(action: {
+                        withAnimation {
+                            showStreakMessage = false
+                            workoutManager.resetWorkout(workoutId: workout.id)
+                        }
+                    }) {
+                        Text("Great Job! Clear Workout")
+                            .font(.system(.headline, design: .rounded).weight(.bold))
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.blue)
+                            .cornerRadius(15)
+                    }
+                    .padding(.top, 20)
+                }
+                .padding(30)
+                .background(Color.black.opacity(0.8))
+                .cornerRadius(20)
+                .shadow(radius: 10)
+                .transition(.scale.combined(with: .opacity))
+            }
         }
-        .navigationTitle(workout.name)
-        .navigationBarTitleDisplayMode(.inline)
-        .background(Color.black.edgesIgnoringSafeArea(.all))
     }
     
     private var headerView: some View {
@@ -64,7 +109,19 @@ struct WorkoutDetailView: View {
             
             Button(action: {
                 withAnimation {
-                    workoutManager.toggleExerciseCompletion(workoutId: workout.id, exerciseId: exercise.id)
+                    let justCompleted = workoutManager.toggleExerciseCompletion(workoutId: workout.id, exerciseId: exercise.id)
+                    
+                    if justCompleted {
+                        // Show celebration
+                        showConfetti = true
+                        showStreakMessage = true
+                        
+                        // Add haptic feedback
+                        #if os(iOS)
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                        #endif
+                    }
                 }
             }) {
                 Image(systemName: exercise.isCompleted ? "checkmark.circle.fill" : "circle")

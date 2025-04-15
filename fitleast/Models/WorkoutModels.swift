@@ -16,14 +16,29 @@ struct Workout: Identifiable, Codable {
     var isCompleted: Bool = false
 }
 
+struct WorkoutHistoryEntry: Identifiable, Codable {
+    var id = UUID()
+    var workoutName: String
+    var day: Int
+    var date: Date
+    var exercisesCompleted: Int
+    var totalExercises: Int
+}
+
 class WorkoutManager: ObservableObject {
     @Published var workouts: [Workout] = []
+    @Published var workoutHistory: [WorkoutHistoryEntry] = []
     @Published var currentStreak: Int = 0
+    @Published var showStreakGained: Bool = false
     
     private let saveKey = "WorkoutData"
+    private let historyKey = "WorkoutHistory"
+    private let streakKey = "CurrentStreak"
     
     init() {
         loadWorkouts()
+        loadWorkoutHistory()
+        loadStreak()
         if workouts.isEmpty {
             setupDefaultWorkouts()
         }
@@ -42,19 +57,39 @@ class WorkoutManager: ObservableObject {
         }
     }
     
-    func updateStreak() {
-        // Simple streak implementation - increases if any workout is completed today
-        let completedWorkouts = workouts.filter { $0.isCompleted }
-        if !completedWorkouts.isEmpty {
-            currentStreak += 1
-        } else {
-            // Reset streak if no workouts completed today
-            // In a real app, you'd check dates to maintain streak for days
-            currentStreak = 0
+    func saveWorkoutHistory() {
+        if let encoded = try? JSONEncoder().encode(workoutHistory) {
+            UserDefaults.standard.set(encoded, forKey: historyKey)
         }
     }
     
-    func toggleExerciseCompletion(workoutId: UUID, exerciseId: UUID) {
+    func loadWorkoutHistory() {
+        if let data = UserDefaults.standard.data(forKey: historyKey),
+           let decoded = try? JSONDecoder().decode([WorkoutHistoryEntry].self, from: data) {
+            workoutHistory = decoded
+        }
+    }
+    
+    func saveStreak() {
+        UserDefaults.standard.set(currentStreak, forKey: streakKey)
+    }
+    
+    func loadStreak() {
+        currentStreak = UserDefaults.standard.integer(forKey: streakKey)
+    }
+    
+    func increaseStreak() {
+        currentStreak += 1
+        showStreakGained = true
+        saveStreak()
+        
+        // Reset the streak notification after a few seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            self.showStreakGained = false
+        }
+    }
+    
+    func toggleExerciseCompletion(workoutId: UUID, exerciseId: UUID) -> Bool {
         if let workoutIndex = workouts.firstIndex(where: { $0.id == workoutId }),
            let exerciseIndex = workouts[workoutIndex].exercises.firstIndex(where: { $0.id == exerciseId }) {
             
@@ -62,14 +97,32 @@ class WorkoutManager: ObservableObject {
             
             // Check if all exercises are completed to mark workout as completed
             let allExercisesCompleted = workouts[workoutIndex].exercises.allSatisfy { $0.isCompleted }
+            let wasCompletedBefore = workouts[workoutIndex].isCompleted
             workouts[workoutIndex].isCompleted = allExercisesCompleted
             
-            if allExercisesCompleted {
-                updateStreak()
+            // If just completed (wasn't completed before but now is)
+            let justCompleted = !wasCompletedBefore && allExercisesCompleted
+            
+            if justCompleted {
+                increaseStreak()
+                
+                // Add to workout history
+                let completedCount = workouts[workoutIndex].exercises.filter { $0.isCompleted }.count
+                let historyEntry = WorkoutHistoryEntry(
+                    workoutName: workouts[workoutIndex].name,
+                    day: workouts[workoutIndex].day,
+                    date: Date(),
+                    exercisesCompleted: completedCount,
+                    totalExercises: workouts[workoutIndex].exercises.count
+                )
+                workoutHistory.insert(historyEntry, at: 0) // Add to beginning of array
+                saveWorkoutHistory()
             }
             
             saveWorkouts()
+            return justCompleted
         }
+        return false
     }
     
     func resetWorkout(workoutId: UUID) {
@@ -80,6 +133,11 @@ class WorkoutManager: ObservableObject {
             workouts[workoutIndex].isCompleted = false
             saveWorkouts()
         }
+    }
+    
+    func clearWorkoutHistory() {
+        workoutHistory.removeAll()
+        saveWorkoutHistory()
     }
     
     private func setupDefaultWorkouts() {
