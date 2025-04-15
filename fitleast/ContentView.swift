@@ -12,15 +12,19 @@ struct ContentView: View {
     
     var body: some View {
         TabView {
-            HomeView()
-                .tabItem {
-                    Label("Workouts", systemImage: "dumbbell.fill")
-                }
+            NavigationStack {
+                HomeView()
+            }
+            .tabItem {
+                Label("Workouts", systemImage: "dumbbell.fill")
+            }
             
-            WorkoutHistoryView()
-                .tabItem {
-                    Label("History", systemImage: "clock.arrow.circlepath")
-                }
+            NavigationStack {
+                WorkoutHistoryView()
+            }
+            .tabItem {
+                Label("History", systemImage: "clock.arrow.circlepath")
+            }
             
             Text("Stats Coming Soon")
                 .tabItem {
@@ -33,6 +37,10 @@ struct ContentView: View {
                 }
         }
         .tint(.white)
+        .toolbar(workoutManager.showTabBar ? .visible : .hidden, for: .tabBar)
+        .onChange(of: workoutManager.showTabBar) { _, newValue in
+            print("Tab bar visibility changed to: \(newValue)")
+        }
         .environmentObject(workoutManager)
         .preferredColorScheme(.dark)
     }

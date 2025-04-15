@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct Exercise: Identifiable, Codable {
     var id = UUID()
@@ -30,6 +31,7 @@ class WorkoutManager: ObservableObject {
     @Published var workoutHistory: [WorkoutHistoryEntry] = []
     @Published var currentStreak: Int = 0
     @Published var showStreakGained: Bool = false
+    @Published var showTabBar: Bool = true
     
     private let saveKey = "WorkoutData"
     private let historyKey = "WorkoutHistory"
@@ -76,6 +78,24 @@ class WorkoutManager: ObservableObject {
     
     func loadStreak() {
         currentStreak = UserDefaults.standard.integer(forKey: streakKey)
+    }
+    
+    func hideTabBar() {
+        DispatchQueue.main.async {
+            print("Hiding tab bar")
+            withAnimation(.easeInOut(duration: 0.3)) {
+                self.showTabBar = false
+            }
+        }
+    }
+    
+    func displayTabBar() {
+        DispatchQueue.main.async {
+            print("Showing tab bar")
+            withAnimation(.easeInOut(duration: 0.3)) {
+                self.showTabBar = true
+            }
+        }
     }
     
     func increaseStreak() {

@@ -5,9 +5,10 @@ import UIKit
 
 struct WorkoutDetailView: View {
     @EnvironmentObject var workoutManager: WorkoutManager
-    @State private var showingTimer = false
+    @Environment(\.dismiss) private var dismiss
     @State private var showConfetti = false
     @State private var showStreakMessage = false
+    @State private var showPlayer = false
     var workout: Workout
     
     var body: some View {
@@ -15,19 +16,33 @@ struct WorkoutDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     headerView
-                    
                     exercisesList
-                    
-                    TimerView()
-                        .padding(.top, 20)
-                    
-                    resetButton
+                    Spacer(minLength: 100) // Space for player at bottom
                 }
                 .padding()
             }
             .navigationTitle(workout.name)
             .navigationBarTitleDisplayMode(.inline)
             .background(Color.black.edgesIgnoringSafeArea(.all))
+            .onAppear {
+                // Hide tab bar when detail view appears
+                workoutManager.hideTabBar()
+                
+                // Show player with animation after 1 second
+                DispatchQueue.main.asyncAfter(deadline: .now()) {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        showPlayer = true
+                    }
+                }
+            }
+            
+            // Fixed workout player at bottom
+            VStack(spacing: 0) {
+                Spacer()
+                WorkoutPlayerView()
+                    .offset(y: showPlayer ? 0 : 200) // Slide up from below
+            }
+            .ignoresSafeArea(edges: .bottom)
             
             // Confetti overlay
             ConfettiView(isShowing: $showConfetti)
@@ -65,6 +80,15 @@ struct WorkoutDetailView: View {
                 .cornerRadius(20)
                 .shadow(radius: 10)
                 .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .toolbar(.hidden, for: .tabBar)
+        .onDisappear {
+            // Ensure tab bar returns when leaving this view
+            if !showStreakMessage {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    workoutManager.displayTabBar()
+                }
             }
         }
     }

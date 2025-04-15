@@ -5,39 +5,42 @@ struct HomeView: View {
     @State private var showingAddWorkout = false
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.black.edgesIgnoringSafeArea(.all)
-                
-                ScrollView {
-                    VStack(spacing: 25) {
-                        headerView
-                        
-                        workoutListView
-                    }
-                    .padding()
+        ZStack {
+            Color.black.edgesIgnoringSafeArea(.all)
+            
+            ScrollView {
+                VStack(spacing: 25) {
+                    headerView
+                    
+                    workoutListView
                 }
-            }
-            .navigationTitle("FitLeast")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showingAddWorkout = true
-                    }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                    }
-                }
-            }
-            .sheet(isPresented: $showingAddWorkout) {
-                Text("Add Workout Feature Coming Soon")
-                    .font(.system(.title3, design: .rounded))
-                    .padding()
-                    .presentationDetents([.medium])
+                .padding()
             }
         }
-        .tint(.white)
-        .preferredColorScheme(.dark)
+        .navigationTitle("FitLeast")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    showingAddWorkout = true
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                }
+            }
+        }
+        .sheet(isPresented: $showingAddWorkout) {
+            Text("Add Workout Feature Coming Soon")
+                .font(.system(.title3, design: .rounded))
+                .padding()
+                .presentationDetents([.medium])
+        }
+        .onAppear {
+            print("HomeView appeared")
+            // Use a slight delay to ensure it runs after navigation completes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                workoutManager.displayTabBar()
+            }
+        }
     }
     
     private var headerView: some View {

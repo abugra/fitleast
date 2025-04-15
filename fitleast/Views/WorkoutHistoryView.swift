@@ -5,35 +5,40 @@ struct WorkoutHistoryView: View {
     @State private var showingClearConfirmation = false
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.black.edgesIgnoringSafeArea(.all)
-                
-                if workoutManager.workoutHistory.isEmpty {
-                    emptyHistoryView
-                } else {
-                    historyListView
-                }
+        ZStack {
+            Color.black.edgesIgnoringSafeArea(.all)
+            
+            if workoutManager.workoutHistory.isEmpty {
+                emptyHistoryView
+            } else {
+                historyListView
             }
-            .navigationTitle("Past Workouts")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showingClearConfirmation = true
-                    }) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
-                    }
-                    .disabled(workoutManager.workoutHistory.isEmpty)
+        }
+        .navigationTitle("Past Workouts")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    showingClearConfirmation = true
+                }) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
                 }
+                .disabled(workoutManager.workoutHistory.isEmpty)
             }
-            .alert("Clear History", isPresented: $showingClearConfirmation) {
-                Button("Cancel", role: .cancel) {}
-                Button("Clear", role: .destructive) {
-                    workoutManager.clearWorkoutHistory()
-                }
-            } message: {
-                Text("Are you sure you want to clear your workout history? This cannot be undone.")
+        }
+        .alert("Clear History", isPresented: $showingClearConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Clear", role: .destructive) {
+                workoutManager.clearWorkoutHistory()
+            }
+        } message: {
+            Text("Are you sure you want to clear your workout history? This cannot be undone.")
+        }
+        .onAppear {
+            print("HistoryView appeared")
+            // Use a slight delay to ensure it runs after navigation completes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                workoutManager.displayTabBar()
             }
         }
     }
